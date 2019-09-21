@@ -9,3 +9,7 @@ dependencies:
   - matplotlib>=2.1.1
   - seaborn
   - regex
+  - pip
+  - pip:
+    - xvfbwrapper
+    
