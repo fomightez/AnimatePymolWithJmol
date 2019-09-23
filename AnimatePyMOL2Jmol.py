@@ -65,9 +65,7 @@ files_produced = []
 for x in session_files:
     # make script to run
     script = "process.spt"
-    output_fn = (
-        f'{x.split(".pse")[0].split(
-        )[0]}_{num2anim_title_dict[animation_choice].split(".spt")[0]}.gif')
+    output_fn = (f'{x.split(".pse")[0].split()[0]}_{num2anim_title_dict[animation_choice].split(".spt")[0]}.gif')
     animnum2script_dict={1: f'load "{x}";capture "{output_fn}" rock y 30',
                     2.: f'load "{x}";capture "{output_fn}" rock x 30',
                     3:f'load "{x}";capture "{output_fn}" spin y 360',
