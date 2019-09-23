@@ -1,8 +1,6 @@
 # To do:
-# - incorporate choosing animation script from the four available
-# - incorporate setting height and width
-# - change to saving gzip because simpler for folks to handle later
-# - add in handling files with spaces in name for naming output
+# - In the notebook, tell them command to run to delete all session files but 
+# don't put that in a code cell yet because don't want things to get deleted ever.
 import os
 import sys
 import fnmatch
@@ -14,9 +12,18 @@ import base64
 session_file_extension = ".pse"
 session_files= []
 
-def run_capture_in_jmol(script):
+num2anim_title_dict={1: "rock-y-60deg.spt",
+                    2.: "rock-x-60deg.spt",
+                    3:"spin-y.spt",
+                    4:"spin-x.spt"
+                    }
+
+
+def run_capture_in_jmol(script,width=600,height=500):
     '''
-    Takes a script as an argument and runs it in jmol.
+    Takes a script as an argument and runs it in jmol. 
+    Also takes the optional parameters of width and height for the resulting 
+    animation gif file.
 
     Technical note: I switched from using 
     `!xvfb-run java -ea -jar /srv/conda/envs/notebook/share/jmol/Jmol.jar -g600x500 -s "{script}"`
@@ -26,7 +33,7 @@ def run_capture_in_jmol(script):
     '''
     from xvfbwrapper import Xvfb
     with Xvfb() as xvfb:
-        !java -ea -jar /srv/conda/envs/notebook/share/jmol/Jmol.jar --silent -g600x500 -s "{script}"
+        !java -ea -jar /srv/conda/envs/notebook/share/jmol/Jmol.jar --silent -g{width}x{height} -s "{script}"
 
 def size_stable(fn, initial_f_size):
     '''
@@ -58,14 +65,22 @@ files_produced = []
 for x in session_files:
     # make script to run
     script = "process.spt"
-    output_fn = f'{x.split(".pse")[0]}_rocking-y-60.gif'
+    output_fn = (
+        f'{x.split(".pse")[0].split(
+        )[0]}_{num2anim_title_dict[animation_choice].split(".spt")[0]}.gif')
+    animnum2script_dict={1: f'load "{x}";capture "{output_fn}" rock y 30',
+                    2.: f'load "{x}";capture "{output_fn}" rock x 30',
+                    3:f'load "{x}";capture "{output_fn}" spin y 360',
+                    4:f'load "{x}";capture "{output_fn}" spin x 360',
+                    }
     
-    s = f'load "{x}";capture "{output_fn}" rock y 30'
+    s = animnum2script_dict[animation_choice]
     %store s > {script}
     #run_capture_in_jmol(script)
     # Run the capture function in Jmol as a a multiprocessing process
     # so can terminate it when it seems done. Otherwise it just goes on & on.
-    jmol = multiprocessing.Process(target=run_capture_in_jmol, args=(script,))
+    jmol = multiprocessing.Process(
+        target=run_capture_in_jmol, args=(script,width,height))
     jmol.start()
     sys.stderr.write("\nStarting Jmol and sending commands . ")
 
@@ -156,12 +171,12 @@ if len(files_produced) == 1:
     #sys.stderr.write("\nDownload '{}' to your computer".".format(files_produced[0]))
     ipd.display(create_download_link(archive_file_name, title = "Download the animation.",single_file =True))
 elif files_produced:
-    archive_file_name = "animations_{}_n_more.tar.gz".format(
+    archive_file_name = "animations_{}_n_more.zip".format(
         files_produced[0].split('_rocking-y-60.gif')[0])
-    !tar czf {archive_file_name} {" ".join(files_produced)}
+    !zip {archive_file_name} {" ".join(files_produced)}
     sys.stderr.write("\nDownload the animation files to your computer.\nTo "
         "make that process easier, a single file containing all the animations "
         "has been made; it is the file '{0}'. You can unpack "
-        "it with the command `tar -xzf {0}` on any computer "
-        "that can run a Unix-like terminal.".format(archive_file_name))
+        "it on most computers. If you have a Unix-like terminal, you can use "
+        "the command `unzip {0}`.".format(archive_file_name))
     #ipd.display(create_download_link(archive_file_name, title = "Download the animations.",single_file =False))
