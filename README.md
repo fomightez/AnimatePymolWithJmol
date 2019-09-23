@@ -1,13 +1,15 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/fomightez/AnimatePymolWithJmol/master?urlpath=lab/tree/index.ipynb)
 
 # AnimatePymolWithJmol
-Easily animate PyMOL session scenes with Jmol to create an animated GIF.
+Easily animate PyMOL session scenes with Jmol to create an animated GIFs.
 
 Click on any `launch binder` badge on this page to begin. 
 
-No software installaion needed. You'll work entirely in the browswe.
+The interface that comes up after a temporary session is launched for you will guide you through the process.
 
-The interface that comes up after a session is spun up for you will guide you through the process.
+No software installaion needed. You'll work entirely in your browser.
+
+Allows making animations from  many PyMOL session files without the need for repeated manual steps.
 
 There is a file to demonstrate the process included as well.
 
