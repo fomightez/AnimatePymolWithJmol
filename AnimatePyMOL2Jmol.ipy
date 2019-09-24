@@ -171,7 +171,8 @@ if len(files_produced) == 1:
 elif files_produced:
     archive_file_name = "animations_{}_n_more.zip".format(
         files_produced[0].split('.gif')[0])
-    !zip {archive_file_name} {" ".join(files_produced)}
+    !zip -q {archive_file_name} {" ".join(files_produced)}
+    sys.stderr.write("\nZipping produced animations into `{}`.\n\n\".format(archive_file_name))
     sys.stderr.write("\nDownload the animation files to your computer.\nTo "
         "make that process easier, a single file containing all the animations "
         "has been made; it is the file '{0}'. You can unpack "
