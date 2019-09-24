@@ -1,6 +1,3 @@
-# To do:
-# - In the notebook, tell them command to run to delete all session files but 
-# don't put that in a code cell yet because don't want things to get deleted ever.
 import os
 import sys
 import fnmatch
