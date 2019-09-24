@@ -3,7 +3,7 @@
 # AnimatePymolWithJmol
 Easily animate PyMOL session scenes with Jmol to create an animated GIFs.
 
-Click on any `launch binder` badge on this page to begin. 
+**Click on any `launch making animations from PyMOL using Jmol` badge on this page to begin.** 
 
 The interface that comes up after a temporary session is launched for you will guide you through the process.
 
