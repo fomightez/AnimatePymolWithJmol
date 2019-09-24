@@ -5,9 +5,13 @@ Easily animate PyMOL session scenes with Jmol to create an animated GIFs.
 
 **Click on any `launch making animations from PyMOL using Jmol` badge on this page to begin.** 
 
+----
+
+Easily make animations from PyMOL session files via Jmol with **NO SOFTWARE INSTALLATIONS**.
+
 The interface that comes up after a temporary session is launched for you will guide you through the process.
 
-No software installaion needed. You'll work entirely in your browser.
+You'll work entirely in your browser. All the software is already installed and working.
 
 Allows making animations from  many PyMOL session files without the need for repeated manual steps.
 
