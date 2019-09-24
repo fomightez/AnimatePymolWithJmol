@@ -21,7 +21,7 @@ num2anim_title_dict={1: "rock-y-60deg.spt",
 
 def run_capture_in_jmol(script,width=600,height=500):
     '''
-    Takes a script as an argument and runs it in jmol. 
+    Takes a script as an argument & runs it in jmol. 
     Also takes the optional parameters of width and height for the resulting 
     animation gif file.
 
