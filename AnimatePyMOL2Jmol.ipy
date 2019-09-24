@@ -1,0 +1,180 @@
+# To do:
+# - In the notebook, tell them command to run to delete all session files but 
+# don't put that in a code cell yet because don't want things to get deleted ever.
+import os
+import sys
+import fnmatch
+import multiprocessing
+import time
+from halo import Halo
+import base64
+
+session_file_extension = ".pse"
+session_files= []
+
+num2anim_title_dict={1: "rock-y-60deg.spt",
+                    2.: "rock-x-60deg.spt",
+                    3:"spin-y.spt",
+                    4:"spin-x.spt"
+                    }
+
+
+def run_capture_in_jmol(script,width=600,height=500):
+    '''
+    Takes a script as an argument and runs it in jmol. 
+    Also takes the optional parameters of width and height for the resulting 
+    animation gif file.
+
+    Technical note: I switched from using 
+    `!xvfb-run java -ea -jar /srv/conda/envs/notebook/share/jmol/Jmol.jar -g600x500 -s "{script}"`
+    to run jmol headless to the solution below because it worked more reliably.
+    When I added multiprocessing, sometimes I would get messages `xvfb` failed 
+    to start when using `xvfb-run`.
+    '''
+    from xvfbwrapper import Xvfb
+    with Xvfb() as xvfb:
+        !java -ea -jar /srv/conda/envs/notebook/share/jmol/Jmol.jar --silent -g{width}x{height} -s "{script}"
+
+def size_stable(fn, initial_f_size):
+    '''
+    Takes a filename and an initial filesize and checks the size again
+    in 4 seconds. If the size is the same it returns `True` because it is 
+    stable, else `False` returned.
+    '''
+    time.sleep(4)
+    current_f_size = os.path.getsize(fn)
+    if current_f_size == initial_f_size:
+        return True
+    return False
+
+for file in os.listdir('.'):
+    if fnmatch.fnmatch(file, '*'+session_file_extension):
+        session_files.append(file)
+# Disregard the demo file if any other session files added
+demo_file_name = "1d66_demo.pse"
+if len(session_files) > 1 and demo_file_name in session_files:
+    session_files.remove(demo_file_name)
+#Report if demo is being used or how many session files being processed
+if len(session_files) == 1 and session_files[0] == demo_file_name:
+    sys.stderr.write("\nProcessing demo file '{}'"
+    ".".format(demo_file_name))
+else:
+    sys.stderr.write("\nProcessing {} files: {}"
+    ".".format(len(session_files),repr(session_files)))
+files_produced = []
+for x in session_files:
+    # make script to run
+    script = "process.spt"
+    output_fn = (f'{x.split(".pse")[0].split()[0]}_{num2anim_title_dict[animation_choice].split(".spt")[0]}.gif')
+    animnum2script_dict={1: f'load "{x}";capture "{output_fn}" rock y 30',
+                    2.: f'load "{x}";capture "{output_fn}" rock x 30',
+                    3:f'load "{x}";capture "{output_fn}" spin y 360',
+                    4:f'load "{x}";capture "{output_fn}" spin x 360',
+                    }
+    
+    s = animnum2script_dict[animation_choice]
+    %store s > {script}
+    #run_capture_in_jmol(script)
+    # Run the capture function in Jmol as a a multiprocessing process
+    # so can terminate it when it seems done. Otherwise it just goes on & on.
+    jmol = multiprocessing.Process(
+        target=run_capture_in_jmol, args=(script,width,height))
+    jmol.start()
+    sys.stderr.write("\nStarting Jmol and sending commands . ")
+
+    #wait a few seconds and then see if the gif file is at least started
+    for mo in range(5):
+        sys.stderr.write(" . ")
+        time.sleep(1)
+    # if the expected file hasn't started give it another 3 minutes to 
+    # produce something before giving up; check every 3 seconds
+    if not os.path.isfile(output_fn):
+        for i in range(60):
+            if os.path.isfile(output_fn):
+                sys.stderr.write("\nBuilding the gif '{}'"
+                    " ".format(output_fn))
+                #spinner = Halo(spinner='toggle5',stream=sys.stderr) # this 
+                # worked to move it to stderr but for some reason when the 
+                # 'Output saved' message would come up it, it would be back 
+                # before spinner and not obvious. Happened whether 
+                # `spinner.stop()` was before or after the terminate/join lines.
+                spinner = Halo(spinner='toggle5')
+                spinner.start()
+                break
+            time.sleep(3)
+    else:
+        sys.stderr.write("\nBuilding the gif '{}'"
+            " ".format(output_fn))
+        #spinner = Halo(spinner='toggle5',stream=sys.stderr) #see spinner call
+        # above for why went back to not using in stderr
+        spinner = Halo(spinner='toggle5')
+        spinner.start()
+
+    # give up if no file started by now otherwise start checking if the gif
+    # has completed being made by seeing when the file size ceases to increase.
+    # Make sure though the file isn't tiny.
+    if not os.path.isfile(output_fn):
+        jmol.terminate()
+        jmol.join()
+        sys.stderr.write("\nERROR: There was a problem and no gif was made "
+            "for '{}'.".format(x))
+    else:
+        # File exists but is it done saving? Check if size still increasing to
+        # do that.
+        f_size = os.path.getsize(output_fn)
+        # loop until size settles
+        while not size_stable(output_fn,f_size):
+            time.sleep(3)
+            f_size = os.path.getsize(output_fn)
+        spinner.stop()
+        jmol.terminate()
+        jmol.join()
+        files_produced.append(output_fn) # record the output file for tracking
+        #make sure if there is a file with a stable size, that it isn't tiny
+        if f_size < 60:
+            sys.stderr.write("\nWARNING: It seems there may be a problem; only "
+                "a tiny gif file, supected to be unplayable, was made for '{}'"
+                ".".format(x))
+        else:
+            sys.stderr.write("Output '{}' saved. Terminating execution of "
+                "that script in Jmol.".format(output_fn))
+
+# display the resulting animations
+import IPython.display as ipd
+for gif in files_produced:
+    ipd.display(ipd.Image(filename=f"{gif}"))
+    ipd.display(ipd.HTML('ABOVE:&nbsp;<font size=5><b>{}</b></font>'.format(gif)))
+
+def create_download_link(filename, title = "Download the animation(s).", single_file = True):
+    '''
+    This is based on https://medium.com/ibm-data-science-experience/how-to-upload-download-files-to-from-notebook-in-my-local-machine-6a4e65a15767
+
+    I tried adding handling binary files based on https://stackoverflow.com/questions/48434732/read-tar-gz-file-into-binary-string-python
+    Code in the section 'Create and download CSV/zip file' at https://blog.softhints.com/jupyter-ipython-download-files/ eems incomplete as I don't see how they make the zip file in conjunction with the sending it through as payload. (I assume `create_download_files()` was triggered elsewhere already.) And minor thing too, why not returning `HTML(html)` in that code block?
+    '''
+    with open(filename,"rb") as f:
+        data = f.read()
+    data = base64.b64encode(data)
+    payload = data.decode()
+    html = 'To download the results click on the following link:<br><a download="{filename}" href="data:text/tar;base64,{payload}" target="_blank">{title}</a> '
+    if single_file:
+        html = 'To download the results click on the following link:<br><a download="{filename}" href="data:text/gif;base64,{payload}" target="_blank">{title}</a> '
+    html = html.format(payload=payload,title=title,filename=filename)
+    return ipd.HTML(html)
+
+#Make it convenient download by user. Archive when there are multiple, but 
+# point out that will need to be converted and indicate option.
+if len(files_produced) == 1:
+    archive_file_name = files_produced[0]
+    #sys.stderr.write("\nDownload '{}' to your computer".".format(files_produced[0]))
+    ipd.display(create_download_link(archive_file_name, title = "Download the animation.",single_file =True))
+elif files_produced:
+    archive_file_name = "animations_{}_n_more.zip".format(
+        files_produced[0].split('.gif')[0])
+    !zip {archive_file_name} {" ".join(files_produced)}
+    sys.stderr.write("\nDownload the animation files to your computer.\nTo "
+        "make that process easier, a single file containing all the animations "
+        "has been made; it is the file '{0}'. You can unpack "
+        "it on most computers. If you have a Unix-like terminal, you can use "
+        "the command `unzip {0}`.".format(archive_file_name))
+    #ipd.display(create_download_link(archive_file_name, title = "Download the animations.",single_file =False))
