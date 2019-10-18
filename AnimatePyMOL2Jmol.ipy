@@ -72,7 +72,7 @@ for x in session_files:
     s = animnum2script_dict[animation_choice]
     %store s > {script}
     #run_capture_in_jmol(script)
-    # Run the capture function in Jmol as a a multiprocessing process
+    # Run the capture function in Jmol as a multiprocessing process
     # so can terminate it when it seems done. Otherwise it just goes on & on.
     jmol = multiprocessing.Process(
         target=run_capture_in_jmol, args=(script,width,height))
