@@ -37,6 +37,10 @@ def size_stable(fn, initial_f_size):
     Takes a filename and an initial filesize and checks the size again
     in 4 seconds. If the size is the same it returns `True` because it is 
     stable, else `False` returned.
+    
+    (Note I later saw `hashlib` being used to 'monitor' a file for changes &
+    sp that is an option related to this. See 
+    https://stackoverflow.com/a/57814673/8508004)
     '''
     time.sleep(4)
     current_f_size = os.path.getsize(fn)
