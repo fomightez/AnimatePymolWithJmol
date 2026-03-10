@@ -15,5 +15,5 @@ libgconf2-4
 xvfb
 libxss1
 libopenblas-base
-libasound2
+libasound2t64
 
